@@ -11,18 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('rooms', function (Blueprint $table) {
             $table->id();
 
+            $table->unsignedInteger('user_id');
             $table->string('name');
-            $table->string('username')->unique();
-            $table->string('email')->unique();
-            $table->string('avatar')->nullable();
-            $table->string('password');
-
-            $table->string('activation_code')->nullable();
-            $table->string('reset_code')->nullable();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('slug')->unique();
+            $table->text('description')->nullable();
+            $table->string('type')->default('private')->comment('public, private, protected');
+            $table->string('password')->nullable();
+            $table->string('logo')->nullable();
+            $table->string('cover')->nullable();
+            $table->string('status')->default('active')->comment('active, inactive');
 
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->nullable()->useCurrentOnUpdate();
@@ -35,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('rooms');
     }
 };

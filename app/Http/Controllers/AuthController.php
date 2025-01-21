@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\UserActivationMail;
 use App\Mail\UserForgotPasswordMail;
 use App\Models\User;
+use App\Services\MediaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +26,7 @@ class AuthController extends Controller
         // Validate the request
         $request->validate([
             'username' => 'required|string',
-            'password' => 'required|string'
+            'password' => 'required|min:6|string'
         ]);
 
         try {
@@ -100,7 +101,7 @@ class AuthController extends Controller
             'name' => 'required|string',
             'username' => 'required|string|unique:users,username',
             'email' => 'required|string|email|unique:users,email',
-            'password' => 'required|string|confirmed'
+            'password' => 'required|min:6|string|confirmed'
         ]);
 
         try {
@@ -112,22 +113,30 @@ class AuthController extends Controller
                 'name' => $request->name,
                 'username' => $request->username,
                 'email' => $request->email,
+                'avatar' => MediaService::generate_avatar($request->name),
                 'password' => bcrypt($request->password),
                 'activation_code' => mt_rand(100000, 999999)
             ]);
+
             // Save the user
-            $user->save();
+            if ($user->save()) {
+                // Send an activation code to the user's email address
+                Mail::to($user->email)->send(new UserActivationMail($user));
 
-            // Send an activation code to the user's email address
-            Mail::to($user->email)->send(new UserActivationMail($user));
+                // Commit the database transaction
+                DB::commit();
 
-            // Commit the database transaction
-            DB::commit();
+                // Return a success response
+                return response()->json([
+                    'message' => 'Your signup process has been completed successfully. A six-digit activation code has been sent to your email address.'
+                ], 201);
 
-            // Return a success response
-            return response()->json([
-                'message' => 'Your signup process has been completed successfully. A six-digit activation code has been sent to your email address.'
-            ], 201);
+            } else {
+                // Return an error response
+                return response()->json([
+                    'message' => 'Server Error'
+                ], 500);
+            }
 
         } catch (\Exception $e) {
             // Rollback the database transaction

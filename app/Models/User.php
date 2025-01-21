@@ -15,6 +15,7 @@ class User extends Model
     protected $fillable = [
         'name',
         'username',
+        'avatar',
         'email',
         'password',
         'activation_code',
@@ -29,6 +30,10 @@ class User extends Model
         'password',
         'activation_code',
         'reset_code',
+        'email_verified_at',
+        'created_at',
+        'updated_at',
+        'deleted_at'
     ];
 
     /**
@@ -49,5 +54,15 @@ class User extends Model
             'access_token' => Str::random(191)
         ]);
         return $userAccessToken->access_token;
+    }
+
+    public static function session_user(): User
+    {
+        return request()->user;
+    }
+
+    public function getAvatarAttribute()
+    {
+        return asset('storage/' . $this->attributes['avatar']);
     }
 }
